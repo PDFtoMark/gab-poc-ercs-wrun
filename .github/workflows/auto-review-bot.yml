@@ -1,0 +1,39 @@
+on:
+  workflow_run:
+    workflows:
+      - Auto Review Bot Trigger
+    types:
+      - completed
+
+name: Auto Review Bot
+permissions:
+  actions: read
+  contents: read
+jobs:
+  auto-review-bot:
+    runs-on: ubuntu-latest
+    name: Run
+    steps:
+      - name: Fetch PR Number
+        uses: dawidd6/action-download-artifact@246dbf436b23d7c49e21a7ab8204ca9ecd1fe615
+        with:
+          name: pr-number
+          workflow: auto-review-trigger.yml
+          run_id: ${{ github.event.workflow_run.id }}
+
+      - name: Save PR Number
+        id: save-pr-number
+        run: echo "pr=$(cat pr-number.txt)" >> $GITHUB_OUTPUT
+
+      - name: Show raw file
+        run: |
+          echo "--- raw pr-number.txt ---"
+          cat pr-number.txt
+          echo "--- end ---"
+
+      - name: Show parsed step outputs
+        env:
+          OUT: ${{ toJSON(steps.save-pr-number.outputs) }}
+        run: |
+          echo "PARSED_OUTPUTS=$OUT"
+          echo "PR_VALUE=[${{ steps.save-pr-number.outputs.pr }}]"
